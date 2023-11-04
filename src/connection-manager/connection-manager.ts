@@ -64,6 +64,12 @@ export class ConnectionManager {
 
   sendMessage(playerId: number, messagetype: string, data?: any) {
     let connectionId = this.connections.findIndex(c => c.playerId === playerId)
+    console.log("Sending message: " + JSON.stringify({
+      connectionId: connectionId,
+      playerId: playerId,
+      messageType: messagetype,
+      data: data || null      
+    }))
     this.connections[connectionId].ws.send(JSON.stringify({
       connectionId: connectionId,
       playerId: playerId,
