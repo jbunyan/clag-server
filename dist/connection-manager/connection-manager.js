@@ -5,13 +5,15 @@ const rxjs_1 = require("rxjs");
 const ws_1 = require("ws");
 class ConnectionManager {
     constructor() {
+        var _a;
         this.connections = [];
+        this.PORT = (_a = process.env.PORT) !== null && _a !== void 0 ? _a : '8080';
         this.messagePipe = new rxjs_1.BehaviorSubject({
             connectionId: -1,
             playerId: -1,
             messageType: "void"
         });
-        this.wss = new ws_1.WebSocketServer({ port: 8080 });
+        this.wss = new ws_1.WebSocketServer({ port: parseInt(this.PORT) });
         this.wss.on('connection', (ws) => {
             let id = this.connections.push({
                 playerId: -1,

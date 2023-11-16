@@ -17,6 +17,7 @@ export class ConnectionManager {
   server: any
   wss: WebSocketServer
   connections: Connection[] = []
+  PORT: string = process.env.PORT ?? '8080';
 
   messagePipe: BehaviorSubject<Message> = new BehaviorSubject({
     connectionId: -1,
@@ -26,7 +27,7 @@ export class ConnectionManager {
 
   constructor() {
 
-    this.wss = new WebSocketServer({ port: 8080 });
+    this.wss = new WebSocketServer({ port: parseInt(this.PORT) });
     
     this.wss.on('connection', (ws) => {
 
