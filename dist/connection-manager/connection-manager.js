@@ -7,7 +7,7 @@ class ConnectionManager {
     constructor() {
         var _a;
         this.connections = [];
-        this.PORT = (_a = process.env.PORT) !== null && _a !== void 0 ? _a : '8080';
+        this.PORT = (_a = process.env['PORT']) !== null && _a !== void 0 ? _a : '8080';
         this.messagePipe = new rxjs_1.BehaviorSubject({
             connectionId: -1,
             playerId: -1,
