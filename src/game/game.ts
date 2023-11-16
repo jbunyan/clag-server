@@ -22,7 +22,7 @@ export class Game {
 
   constructor() {
     this.cardDeck = new CardDeck()
-    this.rounds = 3
+    this.rounds = 7
     this.players = []
     this.currentRound = {
       dealer: -1,
@@ -69,7 +69,7 @@ export class Game {
     this.currentRound = {
       dealer: this.nextPlayer(previousRound.dealer),
       roundNumber: previousRound.roundNumber + 1,
-      predictions: [],
+      predictions: new Array(this.players.length).fill(-1),
       tricks: new Array(this.players.length).fill(0),
       trumps: "X"
     }
@@ -133,8 +133,8 @@ export class Game {
     return this.hands
   }
   
-  addPrediction(p: number) {
-    this.currentRound.predictions?.push(p)
+  addPrediction(player: number, p: number) {
+    this.currentRound.predictions[player] = p
     console.log(JSON.stringify(this.currentRound))
   }
 
@@ -153,11 +153,8 @@ export class Game {
       }
       scores.push(s)
     }
-
-    console.log(`Scores prior to setting: ${JSON.stringify(scores)}`)
-    
+ 
     this.currentRound.predictions.forEach( (prediction: number, index: number) => {
-      console.log(`Index: ${index}`)
       scores[index].prediction = this.currentRound.predictions[index]
       let made = this.currentRound.predictions[index] === this.currentRound.tricks[index] ? true : false
       scores[index].made = made
@@ -165,8 +162,6 @@ export class Game {
         scores[index].score = 10 + (2 * scores[index].prediction)
       }
     })
-
-    console.log(`Scores after setting: ${JSON.stringify(scores)}`)
     
     this.scoreboard.addRound(scores)
 
@@ -175,6 +170,12 @@ export class Game {
     console.log(`Scoreboard: ${JSON.stringify(this.scoreboard.getScoreboard())}`)
   }
 
+  getScoreboard() {
+    return this.scoreboard
+  }
 
+  getPlayers(): string[] {
+    return this.players.map(p => p.getName())
+  }
 
 }

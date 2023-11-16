@@ -7,7 +7,7 @@ const card_deck_1 = require("../card-deck/card-deck");
 class Game {
     constructor() {
         this.cardDeck = new card_deck_1.CardDeck();
-        this.rounds = 3;
+        this.rounds = 7;
         this.players = [];
         this.currentRound = {
             dealer: -1,
@@ -47,7 +47,7 @@ class Game {
         this.currentRound = {
             dealer: this.nextPlayer(previousRound.dealer),
             roundNumber: previousRound.roundNumber + 1,
-            predictions: [],
+            predictions: new Array(this.players.length).fill(-1),
             tricks: new Array(this.players.length).fill(0),
             trumps: "X"
         };
@@ -100,9 +100,8 @@ class Game {
     getHands() {
         return this.hands;
     }
-    addPrediction(p) {
-        var _a;
-        (_a = this.currentRound.predictions) === null || _a === void 0 ? void 0 : _a.push(p);
+    addPrediction(player, p) {
+        this.currentRound.predictions[player] = p;
         console.log(JSON.stringify(this.currentRound));
     }
     awardTrick(winner) {
@@ -118,9 +117,7 @@ class Game {
             };
             scores.push(s);
         }
-        console.log(`Scores prior to setting: ${JSON.stringify(scores)}`);
         this.currentRound.predictions.forEach((prediction, index) => {
-            console.log(`Index: ${index}`);
             scores[index].prediction = this.currentRound.predictions[index];
             let made = this.currentRound.predictions[index] === this.currentRound.tricks[index] ? true : false;
             scores[index].made = made;
@@ -128,10 +125,15 @@ class Game {
                 scores[index].score = 10 + (2 * scores[index].prediction);
             }
         });
-        console.log(`Scores after setting: ${JSON.stringify(scores)}`);
         this.scoreboard.addRound(scores);
         console.log(`currentRound: ${JSON.stringify(this.currentRound)}`);
         console.log(`Scoreboard: ${JSON.stringify(this.scoreboard.getScoreboard())}`);
+    }
+    getScoreboard() {
+        return this.scoreboard;
+    }
+    getPlayers() {
+        return this.players.map(p => p.getName());
     }
 }
 exports.Game = Game;

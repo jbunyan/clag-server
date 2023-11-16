@@ -21,11 +21,24 @@ class GameController {
         this.leadoutPlayer = -1;
         this.trickNumber = -1;
     }
+    reset() {
+        this.game = new game_1.Game();
+        this.state = GameState.Registration;
+        this.connectionManager = new connection_manager_1.ConnectionManager();
+        this.messagePipe = this.connectionManager.getMessagePipe();
+        this.currentTrick = [];
+        this.leadoutPlayer = -1;
+        this.trickNumber = -1;
+    }
     run() {
         this.messagePipe.subscribe({
             next: (message) => {
                 console.log("game-controller: message received");
                 switch (message.messageType) {
+                    case "reset": {
+                        this.reset();
+                        break;
+                    }
                     case "register": {
                         if (this.state === GameState.Registration) {
                             this.processRegistration(message);
@@ -60,7 +73,7 @@ class GameController {
         console.log("processing registration " + JSON.stringify(message));
         let id = this.game.addPlayer(message.data.name);
         this.connectionManager.setPlayerId(message.connectionId, id);
-        this.connectionManager.broadcast("newPlayer", { playerId: id, name: message.data.name });
+        this.connectionManager.broadcast("players", { players: this.game.getPlayers() });
     }
     processSetRounds(message) {
         this.game.setNumberOfRounds(message.data.rounds);
@@ -85,14 +98,14 @@ class GameController {
         this.connectionManager.sendMessage(leadoutPlayer, "predictionRequest"); // start getting predictions from leadout player
     }
     processPrediction(message) {
-        this.game.addPrediction(message.data.prediction);
+        this.game.addPrediction(message.playerId, message.data.prediction);
+        this.connectionManager.broadcast("predictions", { "prediction": { "playerId": message.playerId, "prediction": message.data.prediction } });
         if (message.playerId !== this.game.getDealer()) {
             let nextPlayer = this.game.nextPlayer(message.playerId);
             this.connectionManager.sendMessage(nextPlayer, "predictionRequest");
         }
         else {
             console.log("All predictions rec'd");
-            this.connectionManager.broadcast("predictions", { "predictions": this.game.getPredictions() });
             let leadoutPlayer = this.game.nextPlayer(this.game.getDealer());
             this.leadoutPlayer = leadoutPlayer;
             this.startNewTrick();
@@ -115,15 +128,21 @@ class GameController {
             console.log("Trick:" + JSON.stringify(this.currentTrick));
             this.scoreTrick();
             if (this.trickNumber !== this.game.getRound()) {
-                this.startNewTrick();
+                setTimeout(() => {
+                    this.startNewTrick();
+                }, 5000);
             }
-            else if (this.game.getRound() !== 3) {
+            else if (this.game.getRound() !== this.game.getTotalRounds()) {
                 this.game.scoreRound();
-                this.game.nextRound();
-                this.startNextRound();
+                this.connectionManager.broadcast("scoreboard", this.game.getScoreboard());
+                setTimeout(() => {
+                    this.game.nextRound();
+                    this.startNextRound();
+                }, 10000);
             }
             else {
                 this.game.scoreRound();
+                this.connectionManager.broadcast("scoreboard", this.game.getScoreboard());
             }
         }
         else {
@@ -147,6 +166,7 @@ class GameController {
         console.log(`trick score - winning player: ${winningPlayer}, winning card: ${winningCard}`);
         this.game.awardTrick(winningPlayer);
         this.leadoutPlayer = winningPlayer;
+        this.connectionManager.broadcast("trickResult", { "trickResult": { "winningPlayer": winningPlayer } });
     }
 }
 exports.GameController = GameController;

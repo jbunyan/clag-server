@@ -31,12 +31,26 @@ export class GameController {
     this.trickNumber = -1
   }
 
+  reset() {
+    this.game = new Game()
+    this.state = GameState.Registration
+    this.connectionManager = new ConnectionManager()
+    this.messagePipe = this.connectionManager.getMessagePipe()
+    this.currentTrick = []
+    this.leadoutPlayer = -1
+    this.trickNumber = -1
+  }
+
   run() {
 
     this.messagePipe.subscribe({
       next: (message: Message) => {
         console.log("game-controller: message received")
         switch (message.messageType) {
+          case "reset": {
+            this.reset()
+            break;
+          }
           case "register": {
             if (this.state === GameState.Registration) {
               this.processRegistration(message)
@@ -72,7 +86,7 @@ export class GameController {
     console.log("processing registration " + JSON.stringify(message))
     let id = this.game.addPlayer(message.data.name)
     this.connectionManager.setPlayerId(message.connectionId, id)
-    this.connectionManager.broadcast("newPlayer",{playerId: id, name: message.data.name})
+    this.connectionManager.broadcast("players",{players: this.game.getPlayers()})
   }
 
   processSetRounds(message: Message) {
@@ -102,13 +116,13 @@ export class GameController {
   }
 
   processPrediction(message: Message) {
-    this.game.addPrediction(message.data.prediction)
+    this.game.addPrediction(message.playerId, message.data.prediction)
+    this.connectionManager.broadcast("predictions",{"prediction": {"playerId": message.playerId, "prediction": message.data.prediction}})
     if ( message.playerId !== this.game.getDealer()) {
       let nextPlayer = this.game.nextPlayer(message.playerId)
       this.connectionManager.sendMessage(nextPlayer,"predictionRequest")
     } else {
       console.log("All predictions rec'd")
-      this.connectionManager.broadcast("predictions",{"predictions": this.game.getPredictions()})
       let leadoutPlayer = this.game.nextPlayer(this.game.getDealer())
       this.leadoutPlayer = leadoutPlayer
       this.startNewTrick()
@@ -135,14 +149,21 @@ export class GameController {
       this.scoreTrick()
 
       if (this.trickNumber !== this.game.getRound()) {
-        this.startNewTrick()
-      } else if ( this.game.getRound() !== 3) {
+        setTimeout( () => {
+          this.startNewTrick()
+        },5000)        
+      } else if ( this.game.getRound() !== this.game.getTotalRounds()) {
         this.game.scoreRound()
-        this.game.nextRound()
-        this.startNextRound()
+        this.connectionManager.broadcast("scoreboard", this.game.getScoreboard())
+        setTimeout( () => {
+          this.game.nextRound()
+          this.startNextRound()
+        },10000)
       } else {
         this.game.scoreRound()
+        this.connectionManager.broadcast("scoreboard", this.game.getScoreboard())
       }
+      
 
     } else {
       this.connectionManager.sendMessage(nextPlayer, "playCard")
@@ -168,6 +189,8 @@ export class GameController {
     console.log(`trick score - winning player: ${winningPlayer}, winning card: ${winningCard}`)
     this.game.awardTrick(winningPlayer)
     this.leadoutPlayer = winningPlayer
+
+    this.connectionManager.broadcast("trickResult",{"trickResult": {"winningPlayer": winningPlayer}})
 
   }
 }

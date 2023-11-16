@@ -80,6 +80,12 @@ export class ConnectionManager {
 
   broadcast(messageType: string, data?: any) {
     this.connections.forEach( (c:Connection,index:number) => {
+      console.log("Sending broadcast message: " + JSON.stringify({
+        connectionId: index,
+        playerId: c.playerId,
+        messageType: messageType,
+        data: data || null      
+      }))
       c.ws.send(JSON.stringify({
         connectionId: index,
         playerId: c.playerId,
