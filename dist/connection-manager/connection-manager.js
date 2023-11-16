@@ -5,6 +5,7 @@ const rxjs_1 = require("rxjs");
 const ws_1 = require("ws");
 class ConnectionManager {
     constructor() {
+        // console.log(`Process.env: ${JSON.stringify(process.env)}`)
         var _a;
         this.connections = [];
         this.PORT = (_a = process.env['PORT']) !== null && _a !== void 0 ? _a : '8080';
@@ -31,7 +32,7 @@ class ConnectionManager {
                 "messageType": "connection"
             }));
         });
-        console.log("server listening on port 8080");
+        console.log(`server listening on port ${this.PORT}`);
     }
     getMessagePipe() {
         return this.messagePipe;

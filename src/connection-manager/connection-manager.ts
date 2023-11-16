@@ -27,6 +27,8 @@ export class ConnectionManager {
 
   constructor() {
 
+    // console.log(`Process.env: ${JSON.stringify(process.env)}`)
+
     this.wss = new WebSocketServer({ port: parseInt(this.PORT) });
     
     this.wss.on('connection', (ws) => {
@@ -52,7 +54,7 @@ export class ConnectionManager {
 
     });
 
-    console.log("server listening on port 8080")
+    console.log(`server listening on port ${this.PORT}`)
   }
 
   getMessagePipe(): BehaviorSubject<Message> {
